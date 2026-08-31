@@ -1,5 +1,8 @@
 # Aletheia packing candidate records
 
+![All 600 circles of the candidate record drawn at their exact certified positions](figures/record_600_drawing.png)
+*This picture is the actual 600-circle record file: every circle at its certified position and size.*
+
 Status: **candidate records, submitted to the catalog maintainer for verification.** They are not accepted records. They do not prove the best possible packings.
 
 ## The problem
