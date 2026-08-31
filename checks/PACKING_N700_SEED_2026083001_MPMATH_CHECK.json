@@ -1,0 +1,51 @@
+{
+  "claim_authority": "NONE",
+  "freeze_gate": {
+    "failures": [],
+    "freeze_path": "/data/adp/investigations/record_forge_2026-08-23/codex_t3_t4/receipts/T3_FREEZE_RECEIPT_V2.json",
+    "freeze_sha256": "0d2ea91af5b226c4f0053d97e256e8c6a3739c85237f8a9bb48dbf99a5a9beae",
+    "passed": true
+  },
+  "mpmath_dps": 180,
+  "path": "/data/adp/investigations/record_forge_2_packing_ramsey_2026-08-30_v1/packing/certificates/PACKING_N700_SEED_2026083001_CANDIDATE.txt",
+  "report": {
+    "boundary_check_enabled": true,
+    "boundary_limiter": {
+      "point": 1,
+      "side": "bottom"
+    },
+    "boundary_radius": "0.019903642856359982094006",
+    "certified_radius": "0.0199036428563599208041450109515278983319897365847754880881121708778202207656263038633707662",
+    "claimed_radius": "0.019903642845244116954587",
+    "limiting_constraint": "pair",
+    "limiting_detail": [
+      543,
+      560
+    ],
+    "minimum_pair_distance": "0.0398072857127198416082900219030557966639794731695509761762243417556404415312526077267415324",
+    "n": 700,
+    "pair_check_enabled": true,
+    "pair_limiter": {
+      "points": [
+        543,
+        560
+      ]
+    },
+    "pair_radius": "0.0199036428563599208041450109515278983319897365847754880881121708778202207656263038633707662",
+    "slack": "0.0000000000111158038495580109515278983319897365847754880881121708778202207656263038633707662",
+    "valid": true
+  },
+  "runtime_guard": {
+    "assert_no_llm": "PASS",
+    "banned_module_roots": [
+      "anthropic",
+      "google.generativeai",
+      "ollama",
+      "openai"
+    ],
+    "socket_ban": "ACTIVE"
+  },
+  "schema_version": "record-forge-t3-certificate-check-v2",
+  "sha256": "14ca8170ff3089e63d6e0730f4e4b7e199e3610109880d84d0be5b959d364ede",
+  "valid": true
+}
