@@ -1,0 +1,55 @@
+{
+  "checks": {
+    "all_four_boundaries": true,
+    "all_unordered_pairs": true,
+    "centers_unique_on_frozen_scale": true,
+    "claim_text_exact_in_every_row": true,
+    "indices_exactly_1_through_n": true,
+    "positive_radius": true
+  },
+  "claim_authority": "NONE",
+  "claimed_radius_scaled_integer": "18637592296199977923367",
+  "claimed_radius_text": "0.018637592296199977923367",
+  "limits": {
+    "boundary_limiter": {
+      "point": 1,
+      "side": "bottom"
+    },
+    "boundary_radius": "0.018637592336768538103797",
+    "boundary_scaled_integer": "18637592336768538103797",
+    "certified_radius_decimal": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481480",
+    "certified_radius_scaled_floor": "18637592336768517873493",
+    "certified_radius_scaled_floor_decimal": "0.018637592336768517873493",
+    "limiting_constraint": "pair",
+    "minimum_pair_squared_scaled_integer": "1389439392446290330219107235399641642622989149",
+    "n": 800,
+    "next_scaled_decimal": "0.018637592336768517873494",
+    "pair_limiter": {
+      "points": [
+        12,
+        23
+      ]
+    },
+    "pair_radius_decimal": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481480",
+    "pair_radius_scaled_floor": "18637592336768517873493",
+    "scale": "1000000000000000000000000",
+    "scale_digits": 24
+  },
+  "path": "/data/adp/investigations/record_forge_2_packing_ramsey_2026-08-30_v1/packing/certificates/PACKING_N800_SEED_2026083001_CANDIDATE.txt",
+  "runtime_guard": {
+    "assert_no_llm": "PASS",
+    "banned_module_roots": [
+      "anthropic",
+      "google.generativeai",
+      "ollama",
+      "openai"
+    ],
+    "socket_ban": "ACTIVE"
+  },
+  "scale_digits": 24,
+  "schema": "record-forge-2-packing-exact-check-v1",
+  "sha256": "076bc719aa8124ea567c0f85bb9629242670006ea60e5e243737f0dc4190e66d",
+  "valid": true,
+  "verifier_path": "/Users/bo/data/adp/scripts/codex_record_forge_2_packing_verify.py",
+  "verifier_sha256": "0234eb7763dee32c3a1081139fb049978ecda593cf845f19bd4f44d2eaf8d739"
+}
