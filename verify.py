@@ -7,8 +7,9 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
+import re
 import sys
-from decimal import Decimal
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -17,6 +18,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 CHECKER = ROOT / "verifier" / "exact_checker.py"
 PINNED_CHECKER_SHA256 = "0234eb7763dee32c3a1081139fb049978ecda593cf845f19bd4f44d2eaf8d739"
+PUBLIC_RADIUS_DIGITS = 101
+DECIMAL_TOKEN = re.compile(r"^(0|[1-9][0-9]*)\.([0-9]+)$")
 
 CANDIDATES: dict[str, dict[str, Any]] = {
     "PACKING_N600_SEED_2026083001_CANDIDATE.txt": {
@@ -27,7 +30,8 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "mpmath_file": "PACKING_N600_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "29d9d6efaa88400ef860cdafce67b1ed16dfcf9b5dd99b6a0a0aac3f4a64342d",
         "printed_catalog_radius": "0.021479376754",
-        "certified_radius": "0.02147937677931336792435345333619189507511634335902592795709860126783031076603618257014873085383241024",
+        "supported_radius": "0.02147937677931336792435345333619189507511634335902592795709860126783031076603618257014873085383241024",
+        "historical_saved_radius_display": "0.02147937677931336792435345333619189507511634335902592795709860126783031076603618257014873085383241024",
     },
     "PACKING_N700_SEED_2026083001_CANDIDATE.txt": {
         "n": 700,
@@ -37,7 +41,8 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "mpmath_file": "PACKING_N700_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "47162a0e614e9189cab57cb757674fe41e53fc78273864686cd64fd1de6ab2bc",
         "printed_catalog_radius": "0.019903642828",
-        "certified_radius": "0.01990364285635992080414501095152789833198973658477548808811217087782022076562630386337076619834542754",
+        "supported_radius": "0.01990364285635992080414501095152789833198973658477548808811217087782022076562630386337076619834542754",
+        "historical_saved_radius_display": "0.01990364285635992080414501095152789833198973658477548808811217087782022076562630386337076619834542754",
     },
     "PACKING_N800_SEED_2026083001_CANDIDATE.txt": {
         "n": 800,
@@ -47,7 +52,8 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "mpmath_file": "PACKING_N800_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "9e6f906257c132ab6e6b4a7de00f24a91273ab5772fc4e7bbcefe952906651fa",
         "printed_catalog_radius": "0.018637592286",
-        "certified_radius": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481480",
+        "supported_radius": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481479",
+        "historical_saved_radius_display": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481480",
     },
 }
 
@@ -67,6 +73,79 @@ def sha256(path: Path) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise VerificationError(message)
+
+
+def parse_decimal_token(text: str) -> tuple[int, int]:
+    """Return an exact nonnegative decimal as numerator and decimal places."""
+    match = DECIMAL_TOKEN.fullmatch(text)
+    require(match is not None, f"non-canonical decimal token: {text!r}")
+    whole, fraction = match.groups()
+    return int(whole + fraction), len(fraction)
+
+
+def fixed_decimal(numerator: int, places: int) -> str:
+    require(numerator >= 0, "a radius numerator cannot be negative")
+    scale = 10**places
+    whole, fraction = divmod(numerator, scale)
+    return f"{whole}.{fraction:0{places}d}"
+
+
+def decimal_greater(left: str, right: str) -> bool:
+    left_value, left_places = parse_decimal_token(left)
+    right_value, right_places = parse_decimal_token(right)
+    return left_value * 10**right_places > right_value * 10**left_places
+
+
+def exact_display_check(text: str, limits: dict[str, Any]) -> dict[str, Any]:
+    """Test a printed radius as an exact rational against walls and pairs."""
+    radius_integer, radius_digits = parse_decimal_token(text)
+    coordinate_scale = int(limits["scale"])
+    boundary_integer = int(limits["boundary_scaled_integer"])
+    minimum_pair_d2 = int(limits["minimum_pair_squared_scaled_integer"])
+    decimal_scale = 10**radius_digits
+    boundary_left = radius_integer * coordinate_scale
+    boundary_right = boundary_integer * decimal_scale
+    pair_left = 4 * radius_integer**2 * coordinate_scale**2
+    pair_right = minimum_pair_d2 * decimal_scale**2
+    positive = radius_integer > 0
+    boundary_ok = boundary_left <= boundary_right
+    pairs_ok = pair_left <= pair_right
+    return {
+        "text": text,
+        "radius_integer": str(radius_integer),
+        "radius_digits": radius_digits,
+        "positive": positive,
+        "boundary_ok": boundary_ok,
+        "pairs_ok": pairs_ok,
+        "feasible": positive and boundary_ok and pairs_ok,
+        "boundary_inequality": {
+            "left": str(boundary_left),
+            "right": str(boundary_right),
+        },
+        "pair_inequality": {
+            "left": str(pair_left),
+            "right": str(pair_right),
+        },
+    }
+
+
+def directed_floor_radius(limits: dict[str, Any], places: int) -> str:
+    """Return the largest decimal on the requested grid that is feasible."""
+    require(places > 0, "display places must be positive")
+    coordinate_scale = int(limits["scale"])
+    boundary_integer = int(limits["boundary_scaled_integer"])
+    minimum_pair_d2 = int(limits["minimum_pair_squared_scaled_integer"])
+    decimal_scale = 10**places
+    boundary_floor = boundary_integer * decimal_scale // coordinate_scale
+    pair_floor = math.isqrt(minimum_pair_d2 * decimal_scale**2) // (
+        2 * coordinate_scale
+    )
+    return fixed_decimal(min(boundary_floor, pair_floor), places)
+
+
+def next_decimal_token(text: str) -> str:
+    numerator, places = parse_decimal_token(text)
+    return fixed_decimal(numerator + 1, places)
 
 
 def load_checker() -> ModuleType:
@@ -90,6 +169,25 @@ def read_json(path: Path) -> dict[str, Any]:
         raise VerificationError(f"could not read {path}: {error}") from error
     require(isinstance(value, dict), f"expected a JSON object in {path}")
     return value
+
+
+def require_supported_display(
+    text: str,
+    limits: dict[str, Any],
+    label: str,
+) -> None:
+    _, places = parse_decimal_token(text)
+    require(
+        text == directed_floor_radius(limits, places),
+        f"{label} is not the directed-downward supported radius",
+    )
+    check = exact_display_check(text, limits)
+    require(check["feasible"] is True, f"{label} fails the exact integer check")
+    next_check = exact_display_check(next_decimal_token(text), limits)
+    require(
+        next_check["feasible"] is False,
+        f"{label} is not maximal on its printed decimal grid",
+    )
 
 
 def compare_saved_checks(
@@ -126,17 +224,28 @@ def compare_saved_checks(
         "minimum_pair_squared_scaled_integer",
         "certified_radius_scaled_floor",
         "certified_radius_scaled_floor_decimal",
-        "certified_radius_decimal",
         "limiting_constraint",
     ):
         require(fresh_limits.get(key) == saved_limits.get(key), f"fresh result differs from the saved exact check at {key}")
+
     require(
-        fresh_limits["certified_radius_decimal"] == spec["certified_radius"],
-        "fresh supported radius differs from the published value",
+        saved_limits.get("certified_radius_decimal")
+        == spec["historical_saved_radius_display"],
+        "the retained historical display changed",
+    )
+    require_supported_display(
+        spec["supported_radius"],
+        fresh_limits,
+        f"the printed {spec['n']}-circle supported radius",
+    )
+    safe_floor = fresh_limits["certified_radius_scaled_floor_decimal"]
+    require_supported_display(
+        safe_floor,
+        fresh_limits,
+        f"the {spec['n']}-circle 24-place safe radius",
     )
     require(
-        Decimal(fresh_limits["certified_radius_scaled_floor_decimal"])
-        > Decimal(spec["printed_catalog_radius"]),
+        decimal_greater(safe_floor, spec["printed_catalog_radius"]),
         "the safe 24-place radius does not exceed the printed catalog radius",
     )
 
@@ -174,7 +283,7 @@ def verify_one(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Check every wall, every circle pair, and the supported radius without rounding the coordinates."
+        description="Check every wall, every circle pair, and each printed supported radius with exact integers."
     )
     parser.add_argument("coordinate_files", nargs="*", type=Path)
     parser.add_argument("--expected-n", type=int, help="required for one coordinate file outside this kit")
@@ -186,10 +295,20 @@ def main() -> int:
     try:
         for path in paths:
             result = verify_one(path.resolve(), checker, guard, args.expected_n)
-            limits = result["limits"]
+            bundled = CANDIDATES.get(path.name)
+            supported = (
+                bundled["supported_radius"]
+                if bundled is not None
+                else directed_floor_radius(result["limits"], PUBLIC_RADIUS_DIGITS)
+            )
+            require_supported_display(
+                supported,
+                result["limits"],
+                f"the printed {result['limits']['n']}-circle supported radius",
+            )
             print(
-                f"PASS: {limits['n']} circles; every wall and pair passed; "
-                f"supported radius {limits['certified_radius_decimal']}"
+                f"PASS: {result['limits']['n']} circles; every wall and pair passed; "
+                f"supported radius {supported}"
             )
     except (OSError, VerificationError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
@@ -198,6 +317,7 @@ def main() -> int:
     if not args.coordinate_files:
         print(
             "PASS: all three fixed files match their saved hashes and checks. "
+            "Every printed supported radius was parsed and retested with exact integers. "
             "They are candidate records submitted to the catalog maintainer for verification. "
             "They are not accepted records or proofs of the best possible packings."
         )
