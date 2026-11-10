@@ -72,6 +72,17 @@ def test_n800_rounding_regression(checker, guard) -> None:
     )
 
 
+def test_feasibility_ignores_unrelated_comparison(checker, guard) -> None:
+    name = "PACKING_N600_SEED_2026083001_CANDIDATE.txt"
+    path = ROOT / "data" / name
+    fresh = verify.verify_one(path, checker, guard)
+    spec = dict(verify.CANDIDATES[name])
+    # Poison the retired comparison input. A feasibility check must not use it.
+    spec["printed_catalog_radius"] = "1.0"
+    verify.compare_saved_checks(path, verify.sha256(path), spec, fresh)
+    print("PASS: feasibility is independent of the retired comparison input")
+
+
 def main() -> int:
     checker = verify.load_checker()
     guard = checker.runtime_guard()
@@ -108,6 +119,7 @@ def main() -> int:
 
     test_every_public_display(checker, guard)
     test_n800_rounding_regression(checker, guard)
+    test_feasibility_ignores_unrelated_comparison(checker, guard)
     print("PASS: all known-answer tests behaved as required")
     return 0
 

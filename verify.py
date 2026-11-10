@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Verify the three published packing candidates with exact integer checks."""
+"""Verify feasibility of the three saved layouts with exact integer checks."""
+# Feasibility only: this checks walls and pairs, not a packing record.
 
 from __future__ import annotations
 
@@ -29,7 +30,6 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "exact_sha256": "5740e8b536c7ed8d54138fe41227683afdb5856d1f0dde39662c06cbfb32f958",
         "mpmath_file": "PACKING_N600_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "29d9d6efaa88400ef860cdafce67b1ed16dfcf9b5dd99b6a0a0aac3f4a64342d",
-        "printed_catalog_radius": "0.021479376754",
         "supported_radius": "0.02147937677931336792435345333619189507511634335902592795709860126783031076603618257014873085383241024",
         "historical_saved_radius_display": "0.02147937677931336792435345333619189507511634335902592795709860126783031076603618257014873085383241024",
     },
@@ -40,7 +40,6 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "exact_sha256": "7b608d1a92af327f2d17b25f3539dfba1195ead114703efcc5fdd892615ac847",
         "mpmath_file": "PACKING_N700_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "47162a0e614e9189cab57cb757674fe41e53fc78273864686cd64fd1de6ab2bc",
-        "printed_catalog_radius": "0.019903642828",
         "supported_radius": "0.01990364285635992080414501095152789833198973658477548808811217087782022076562630386337076619834542754",
         "historical_saved_radius_display": "0.01990364285635992080414501095152789833198973658477548808811217087782022076562630386337076619834542754",
     },
@@ -51,7 +50,6 @@ CANDIDATES: dict[str, dict[str, Any]] = {
         "exact_sha256": "a154a55d9a337a37e7be7bb8870f8ece7af3822d216a2b0df81f002ee166ec7f",
         "mpmath_file": "PACKING_N800_SEED_2026083001_MPMATH_CHECK.json",
         "mpmath_sha256": "9e6f906257c132ab6e6b4a7de00f24a91273ab5772fc4e7bbcefe952906651fa",
-        "printed_catalog_radius": "0.018637592286",
         "supported_radius": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481479",
         "historical_saved_radius_display": "0.01863759233676851787349305044720107162570826540500351479481853408661754556406518746010543808969481480",
     },
@@ -89,11 +87,6 @@ def fixed_decimal(numerator: int, places: int) -> str:
     whole, fraction = divmod(numerator, scale)
     return f"{whole}.{fraction:0{places}d}"
 
-
-def decimal_greater(left: str, right: str) -> bool:
-    left_value, left_places = parse_decimal_token(left)
-    right_value, right_places = parse_decimal_token(right)
-    return left_value * 10**right_places > right_value * 10**left_places
 
 
 def exact_display_check(text: str, limits: dict[str, Any]) -> dict[str, Any]:
@@ -244,10 +237,6 @@ def compare_saved_checks(
         fresh_limits,
         f"the {spec['n']}-circle 24-place safe radius",
     )
-    require(
-        decimal_greater(safe_floor, spec["printed_catalog_radius"]),
-        "the safe 24-place radius does not exceed the printed catalog radius",
-    )
 
 
 def verify_one(
@@ -318,8 +307,8 @@ def main() -> int:
         print(
             "PASS: all three fixed files match their saved hashes and checks. "
             "Every printed supported radius was parsed and retested with exact integers. "
-            "They are candidate records submitted to the catalog maintainer for verification. "
-            "They are not accepted records or proofs of the best possible packings."
+            "These checks establish feasibility at the checked radii only. "
+            "The record claims are withdrawn; this does not prove the best possible layouts."
         )
     return 0
 

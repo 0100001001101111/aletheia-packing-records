@@ -1,6 +1,6 @@
 # Provenance
 
-These files come from the Project Aletheia Record Forge II packing run dated 2026-08-30 and 2026-08-31. The public claim is limited to three candidate records submitted to the catalog maintainer for verification. The maintainer has not accepted them, and the run does not prove the best possible packings.
+I previously presented these three layouts as candidate records. I withdraw that claim. They come from my packing run on 2026-08-30 and 2026-08-31 and the saved checks establish valid layouts at the checked radii (no record claim follows from those checks).
 
 The nine data and check files are byte-for-byte copies from:
 
